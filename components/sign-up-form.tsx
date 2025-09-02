@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useAuthStore from "@/lib/store/auth.store";
 
 export function SignUpForm({
   className,
@@ -23,37 +23,27 @@ export function SignUpForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const { signUp, loading, error, success, resetStatus } = useAuthStore();
+
+  useEffect(() => {
+    if (success) {
+      router.push("/auth/sign-up-success");
+    }
+    // On component mount, reset any previous error/success states
+    return () => {
+      resetStatus();
+    };
+  }, [success, router, resetStatus]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    setIsLoading(true);
-    setError(null);
-
     if (password !== repeatPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
+      alert("Passwords do not match"); // Simple validation
       return;
     }
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
-        },
-      });
-      if (error) throw error;
-      router.push("/auth/sign-up-success");
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
+    await signUp({ email, password });
   };
 
   return (
@@ -102,8 +92,8 @@ export function SignUpForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating an account..." : "Sign up"}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating an account..." : "Sign up"}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">

@@ -1,46 +1,81 @@
 "use server";
 
-import webpush from "web-push";
+import { createClient } from "@/lib/supabase/server";
+import { LoginCredentials } from "@/lib/store/auth.store";
 
-webpush.setVapidDetails(
-  process.env.NEXT_PUBLIC_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+// Authentication Actions
 
-let subscription: webpush.PushSubscription | null = null;
-
-export async function subscribeUser(sub: webpush.PushSubscription) {
-  subscription = sub;
-  // In a production environment, you would want to store the subscription in a database
-  // For example: await db.subscriptions.create({ data: sub })
-  return { success: true };
+export async function loginWithEmailAndPassword(credentials: LoginCredentials) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: credentials.email,
+    password: credentials.password,
+  });
+  return { data, error };
 }
 
-export async function unsubscribeUser() {
-  subscription = null;
-  // In a production environment, you would want to remove the subscription from the database
-  // For example: await db.subscriptions.delete({ where: { ... } })
-  return { success: true };
+export async function signUpWithEmailAndPassword(
+  credentials: LoginCredentials,
+) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({
+    email: credentials.email,
+    password: credentials.password,
+  });
+  return { data, error };
 }
 
-export async function sendNotification(message: string) {
-  if (!subscription) {
-    throw new Error("No subscription available");
-  }
+export async function logout() {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signOut();
+  return { error };
+}
 
-  try {
-    await webpush.sendNotification(
-      subscription,
-      JSON.stringify({
-        title: "Test Notification",
-        body: message,
-        icon: "/icon.png",
-      }),
-    );
-    return { success: true };
-  } catch (error) {
-    console.error("Error sending push notification:", error);
-    return { success: false, error: "Failed to send notification" };
+export async function getUser() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) return null;
+  return data.user;
+}
+
+export async function getProfile(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+  if (error) {
+    console.error("Error fetching profile:", error);
+    return null;
   }
+  return data;
+}
+
+export async function getStores() {
+  const supabase = await createClient();
+  // This query assumes RLS is in place as described in architecture.md
+  // It fetches all stores the user has access to.
+  const { data, error } = await supabase.from("stores").select("*");
+
+  if (error) {
+    console.error("Error fetching stores:", error);
+    return [];
+  }
+  return data;
+}
+
+export async function sendPasswordResetEmail(email: string) {
+  const supabase = await createClient();
+  // The redirectTo URL should be configured in your Supabase project's authentication settings
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/update-password`,
+  });
+  return { data, error };
+}
+
+export async function updateUserPassword(password: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.updateUser({ password });
+  return { data, error };
 }
