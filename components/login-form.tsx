@@ -24,12 +24,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  const { login, loading, error, isLoggedIn } = useAuthStore((state) => ({
-    login: state.login,
-    loading: state.loading,
-    error: state.error,
-    isLoggedIn: state.isLoggedIn,
-  }));
+  const { login, loading, error, isLoggedIn } = useAuthStore();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
