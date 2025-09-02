@@ -10,15 +10,14 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
+      "node_modules/",
+      ".next/",
+      "out/",
+      "build/",
       "next-env.d.ts",
-      "coverage/**",
+      "coverage/",
       "*.log",
       "package-lock.json",
       "yarn.lock",
@@ -26,16 +25,19 @@ const eslintConfig = [
       ".DS_Store",
       "/.pnp",
       ".pnp.*",
-      ".yarn/*",
+      ".yarn/",
       "*.pem",
       "npm-debug.log*",
       "yarn-debug.log*",
       "yarn-error.log*",
       ".pnpm-debug.log*",
       ".env*",
-      ".vercel",
+      ".vercel/",
       "*.tsbuildinfo",
     ],
+  },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
     },
