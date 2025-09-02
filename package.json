@@ -10,6 +10,8 @@
     "lint:fix": "eslint --fix",
     "format": "eslint --fix && prettier --write .",
     "prepare": "husky",
+    "db:login": "npx supabase login",
+    "db:link": "npx supabase link --project-ref <supabase-project-ref>",
     "db:push": "npx supabase db push",
     "db:reset": "npx supabase db reset --linked"
   },
